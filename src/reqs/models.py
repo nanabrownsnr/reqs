@@ -1,0 +1,20 @@
+from typing import Annotated, Sequence
+from typing_extensions import TypedDict
+
+from pydantic import BaseModel
+
+from langgraph.graph.message import add_messages
+
+
+# 1. Define the State of your graph
+class AgentState(TypedDict):
+    # add_messages appends new messages to the history instead of overwriting them
+    messages: Annotated[Sequence[dict], add_messages]
+
+
+class UserStory(BaseModel):
+    title: str
+    user_role: str
+    goal: str
+    benefit: str
+    acceptance_criteria: list[str]
