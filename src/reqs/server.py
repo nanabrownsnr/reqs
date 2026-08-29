@@ -32,7 +32,7 @@ def build_server(graph):
     async def register_tenant(request: Request):
         payload = await request.json()
 
-        tenant = save_tenant(
+        tenant = _save_tenant(
             tenant_id=payload["tenant_id"],
             name=payload["name"],
             telegram_token=payload["telegram_token"],
