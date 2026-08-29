@@ -2,7 +2,7 @@ from langgraph.checkpoint.postgres import PostgresSaver
 
 from reqs.config import settings
 from reqs.graph import build_graph
-from reqs.telegram_bot import build_telegram_bot
+from reqs.server import build_server
 
 
 def main():
@@ -13,14 +13,15 @@ def main():
 
         graph = build_graph(checkpointer)
 
-        telegram_app = build_telegram_bot(
-            token=settings.telegram_bot_token,
-            graph=graph,
+        mcp = build_server(graph)
+
+        print("REQS is running......")
+
+        mcp.run(
+            transport="http",
+            host="0.0.0.0",
+            port=8000,
         )
-
-        print("Telegram bot is running...")
-
-        telegram_app.run_polling()
 
 
 if __name__ == "__main__":

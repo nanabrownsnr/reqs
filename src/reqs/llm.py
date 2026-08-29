@@ -3,11 +3,11 @@ from langchain_openai import ChatOpenAI
 from reqs.config import settings
 
 
-def get_llm():
+def get_llm(api_key: str):
     llm = ChatOpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=settings.openrouter_api_key,
-        model="openrouter/free",
+        base_url=settings.openrouter_url,
+        api_key=api_key,
+        model=settings.openrouter_model,
         temperature=0,
     )
 

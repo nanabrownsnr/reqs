@@ -1,42 +1,40 @@
-from langchain_core import messages
+from langchain_core.messages import SystemMessage
+from langchain_core.runnables import RunnableConfig
+
 from langgraph.graph import StateGraph, START, END
+from langgraph.prebuilt import ToolNode
 
 from reqs.llm import get_llm
 from reqs.models import AgentState
-
-from langchain_core.messages import SystemMessage
-
-SYSTEM_PROMPT = """
-You are a requirements gathering agent.
-
-Your job is to help stakeholders turn vague requests into clear, actionable user stories.
-
-Rules:
-- Ask focused clarifying questions when important details are missing.
-- Do not invent requirements the stakeholder did not imply.
-- When enough information is available, propose one or more user stories.
-- Each user story should include:
-  - title
-  - user role
-  - goal
-  - benefit
-  - acceptance criteria
-- Present the proposed stories to the user before saving them.
-- NEVER save a user story unless the user explicitly confirms that the proposed stories should be saved.
-- If the user requests changes, revise the draft and ask for confirmation again.
-- Keep the conversation natural and concise.
-"""
+from reqs.tools import save_user_stories, get_existing_user_stories
+from reqs.system_prompt import _get_system_prompt
+from reqs.services import _get_tenant
 
 
-# 2. Define a processing node
-def llm_node(state: AgentState):
+tools = [save_user_stories, get_existing_user_stories]
+
+
+def llm_node(state: AgentState, config: RunnableConfig):
     print("\n--- Processing Node ---")
 
-    llm = get_llm()
-    messages = [SystemMessage(content=SYSTEM_PROMPT), *state["messages"]]
+    tenant_id = config["configurable"]["tenant_id"]
+    tenant = _get_tenant(tenant_id)
+
+    llm = get_llm(tenant.openrouter_key).bind_tools(tools)
+
+    messages = [SystemMessage(content=_get_system_prompt()), *state["messages"]]
     resp = llm.invoke(messages)
 
     return {"messages": [resp]}
+
+
+def should_continue(state: AgentState):
+    last_message = state["messages"][-1]
+
+    if last_message.tool_calls:
+        return "tools"
+
+    return END
 
 
 def build_graph(checkpointer):
@@ -44,8 +42,18 @@ def build_graph(checkpointer):
     graph = StateGraph(AgentState)
 
     graph.add_node("llm", llm_node)
+    graph.add_node("tools", ToolNode(tools))
 
     graph.add_edge(START, "llm")
-    graph.add_edge("llm", END)
+    graph.add_conditional_edges(
+        "llm",
+        should_continue,
+        {
+            "tools": "tools",
+            END: END,
+        },
+    )
+
+    graph.add_edge("tools", "llm")
 
     return graph.compile(checkpointer=checkpointer)

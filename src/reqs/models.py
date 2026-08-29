@@ -18,3 +18,10 @@ class UserStory(BaseModel):
     goal: str
     benefit: str
     acceptance_criteria: list[str]
+
+
+class TenantContext(BaseModel):
+    tenant_id: str
+    name: str
+    telegram_token: str | None = None
+    openrouter_key: str | None = None
