@@ -33,7 +33,7 @@ def llm_node(state: AgentState):
     print("\n--- Processing Node ---")
 
     llm = get_llm()
-    messages = [SystemMessage(content=SystemMessage), *state["messages"]]
+    messages = [SystemMessage(content=SYSTEM_PROMPT), *state["messages"]]
     resp = llm.invoke(messages)
 
     return {"messages": [resp]}
