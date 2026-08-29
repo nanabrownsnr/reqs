@@ -24,4 +24,4 @@ class TenantContext(BaseModel):
     tenant_id: str
     name: str
     telegram_token: str | None = None
-    openrouter_key: str | None = None
+    openrouter_api_key: str | None = None

@@ -20,7 +20,7 @@ def llm_node(state: AgentState, config: RunnableConfig):
     tenant_id = config["configurable"]["tenant_id"]
     tenant = _get_tenant(tenant_id)
 
-    llm = get_llm(tenant.openrouter_key).bind_tools(tools)
+    llm = get_llm(tenant.openrouter_api_key).bind_tools(tools)
 
     messages = [SystemMessage(content=_get_system_prompt()), *state["messages"]]
     resp = llm.invoke(messages)
