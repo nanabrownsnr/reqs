@@ -4,7 +4,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from reqs.telegram_service import handle_telegram_update, register_telegram_webhook
-from reqs.services import save_tenant
+from reqs.services import _save_tenant
 
 
 def build_server(graph):
