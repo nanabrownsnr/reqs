@@ -4,7 +4,11 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from reqs.telegram_service import handle_telegram_update, register_telegram_webhook
-from reqs.services import _save_tenant
+from reqs.services import (
+    _save_tenant,
+    _get_user_stories_from_db,
+    _update_user_story_status,
+)
 
 
 def build_server(graph):
@@ -50,9 +54,39 @@ def build_server(graph):
         )
 
     @mcp.tool
-    def ping() -> str:
-        """Check whether REQS is running."""
+    def get_user_stories(
+        tenant_id: str,
+        status: str | None = None,
+    ):
+        """
+        Get user stories for a tenant.
 
-        return "REQS is running."
+        Optionally filter by status, for example:
+        draft, reviewed, rejected, added_to_board.
+        """
+
+        return _get_user_stories_from_db(
+            tenant_id=tenant_id,
+            status=status,
+        )
+
+    @mcp.tool
+    def update_user_story_status(
+        tenant_id: str,
+        story_id: str,
+        status: str,
+    ):
+        """
+        Update the review/workflow status of a user story.
+
+        Typical statuses:
+        draft, reviewed, added_to_board, rejected.
+        """
+
+        return _update_user_story_status(
+            tenant_id=tenant_id,
+            story_id=story_id,
+            status=status,
+        )
 
     return mcp

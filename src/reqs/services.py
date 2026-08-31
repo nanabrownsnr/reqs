@@ -50,23 +50,53 @@ def _save_user_stories_to_db(
         conn.commit()
 
 
-def _get_user_stories_from_db(tenant_id: str):
+def _get_user_stories_from_db(
+    tenant_id: str,
+    status: str | None = None,
+):
     with psycopg.connect(settings.database_url) as conn:
-        rows = conn.execute(
-            """
-            SELECT
-                story_id,
-                title,
-                user_role,
-                goal,
-                benefit,
 
-            FROM user_stories
-            WHERE tenant_id = %s
-            ORDER BY created_at DESC
-            """,
-            (tenant_id,),
-        ).fetchall()
+        if status:
+            rows = conn.execute(
+                """
+                SELECT
+                    story_id,
+                    title,
+                    user_role,
+                    goal,
+                    benefit,
+                    acceptance_criteria,
+                    status,
+                    created_at
+                FROM user_stories
+                WHERE tenant_id = %s
+                AND status = %s
+                ORDER BY created_at DESC
+                """,
+                (
+                    tenant_id,
+                    status,
+                ),
+            ).fetchall()
+
+        else:
+            rows = conn.execute(
+                """
+                SELECT
+                    story_id,
+                    title,
+                    user_role,
+                    goal,
+                    benefit,
+                    acceptance_criteria,
+                    status,
+                    created_at
+                FROM user_stories
+                WHERE tenant_id = %s
+                ORDER BY created_at DESC
+                """,
+                (tenant_id,),
+            ).fetchall()
 
     return [
         {
@@ -75,6 +105,9 @@ def _get_user_stories_from_db(tenant_id: str):
             "user_role": row[2],
             "goal": row[3],
             "benefit": row[4],
+            "acceptance_criteria": row[5],
+            "status": row[6],
+            "created_at": row[7].isoformat(),
         }
         for row in rows
     ]
@@ -124,3 +157,33 @@ def _save_tenant(
     return tenant
 
 
+def _update_user_story_status(
+    tenant_id: str,
+    story_id: str,
+    status: str,
+):
+    with psycopg.connect(settings.database_url) as conn:
+        result = conn.execute(
+            """
+            UPDATE user_stories
+            SET status = %s
+            WHERE story_id = %s
+            AND tenant_id = %s
+            RETURNING story_id, status
+            """,
+            (
+                status,
+                story_id,
+                tenant_id,
+            ),
+        ).fetchone()
+
+        conn.commit()
+
+    if result is None:
+        raise ValueError(f"User story {story_id} not found.")
+
+    return {
+        "story_id": str(result[0]),
+        "status": result[1],
+    }
