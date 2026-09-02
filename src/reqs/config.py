@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     license_server_jwks_endpoint: str
     license_server_activation_endpoint: str
 
-    enviroment: str = "development"
+    environment: str = "development"
     encryption_key: str
 
     model_config = SettingsConfigDict(
