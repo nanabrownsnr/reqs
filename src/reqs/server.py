@@ -50,8 +50,6 @@ def build_server(graph):
                 "base_url": f"{settings.public_url}/mcp",
                 "version": "1.0.0",
                 "external_connections": {
-                    "oauth": None,
-                    "api_key": None,
                     "project": {"name": "reqs_configuration"},
                 },
             }
