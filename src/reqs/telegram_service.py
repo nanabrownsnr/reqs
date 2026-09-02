@@ -1,5 +1,3 @@
-import asyncio
-
 from telegram import Bot, Update
 
 from reqs.conversation import chat
@@ -15,7 +13,7 @@ async def register_telegram_webhook(
 
     bot = Bot(token=tenant.telegram_token)
 
-    webhook_url = f"{settings.public_url}" f"/telegram/{tenant_id}"
+    webhook_url = f"{settings.public_url}" f"/api/v1/telegram/{tenant_id}"
 
     await bot.set_webhook(url=webhook_url)
 
@@ -47,8 +45,7 @@ async def handle_telegram_update(
 
     conversation_id = f"{tenant_id}:telegram:{telegram_chat_id}"
 
-    response = await asyncio.to_thread(
-        chat,
+    response = await chat(
         graph,
         tenant_id,
         conversation_id,

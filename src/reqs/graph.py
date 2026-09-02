@@ -23,7 +23,7 @@ def llm_node(state: AgentState, config: RunnableConfig):
     llm = get_llm(tenant.openrouter_api_key).bind_tools(tools)
 
     messages = [SystemMessage(content=_get_system_prompt()), *state["messages"]]
-    resp = llm.invoke(messages)
+    resp = llm.ainvoke(messages)
 
     return {"messages": [resp]}
 

@@ -29,8 +29,7 @@ services:
       DATABASE_URL: postgresql://agent:agent@postgres:5432/agentdb
       OPENROUTER_URL: https://openrouter.ai/api/v1
       OPENROUTER_MODEL: openrouter/free
-      PUBLIC_URL: https://your-public-domain.com
-      USERS_FILE_PATH: /app/data/users.json
+      PUBLIC_URL: https://reqs-58ca.onrender.com
 
     restart: unless-stopped
 

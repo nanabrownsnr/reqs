@@ -1,7 +1,7 @@
 from langchain_core.messages import HumanMessage
 
 
-def chat(
+async def chat(
     graph,
     tenant_id: str,
     conversation_id: str,
@@ -15,7 +15,7 @@ def chat(
         }
     }
 
-    result = graph.invoke(
+    result = await graph.ainvoke(
         {"messages": [HumanMessage(content=message)]},
         config=config,
     )

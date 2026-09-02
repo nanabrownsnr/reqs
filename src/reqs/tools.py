@@ -6,7 +6,7 @@ from reqs.services import _save_user_stories_to_db, _get_user_stories_from_db
 
 
 @tool
-def save_user_stories(
+async def save_user_stories(
     stories: list[UserStory],
     config: RunnableConfig,
 ):
@@ -19,7 +19,7 @@ def save_user_stories(
     tenant_id = config["configurable"]["tenant_id"]
     conversation_id = config["configurable"]["thread_id"]
 
-    _save_user_stories_to_db(tenant_id, conversation_id, stories)
+    await _save_user_stories_to_db(tenant_id, conversation_id, stories)
 
     return {
         "saved": True,
@@ -28,7 +28,10 @@ def save_user_stories(
 
 
 @tool
-def get_existing_user_stories(config: RunnableConfig):
+async def get_existing_user_stories(
+    config: RunnableConfig,
+    status: str | None,
+):
     """
     Get previously saved user stories for all conversations.
 
@@ -38,4 +41,4 @@ def get_existing_user_stories(config: RunnableConfig):
     """
     tenant_id = config["configurable"]["tenant_id"]
 
-    return _get_user_stories_from_db(tenant_id)
+    return await _get_user_stories_from_db(tenant_id, status)

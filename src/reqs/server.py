@@ -1,4 +1,12 @@
+import asyncio
+
+from logging import getLogger
+
 from fastmcp import FastMCP
+from fastmcp.server.dependencies import get_http_headers
+from fastmcp.server.middleware import Middleware as MCPMiddleware, MiddlewareContext
+
+from contextlib import asynccontextmanager
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -9,17 +17,47 @@ from reqs.services import (
     _get_user_stories_from_db,
     _update_user_story_status,
 )
+from reqs.config import settings
+from reqs.license import license_watcher
+from reqs.auth import get_auth_provider, get_current_user
+from reqs.usage import save_usage_report
+
+logger = getLogger(__name__)
 
 
 def build_server(graph):
 
-    mcp = FastMCP("Requirements_Gathering")
+    @asynccontextmanager
+    async def app_lifespan(server):
+        task = asyncio.create_task(license_watcher())
+        yield
+        task.cancel()
 
-    @mcp.custom_route("/health", methods=["GET"])
-    async def health(request: Request):
-        return JSONResponse({"status": "ok"})
+    mcp = FastMCP(
+        settings.app_title,
+        auth=get_auth_provider(),
+        lifespan=app_lifespan,
+    )
 
-    @mcp.custom_route("/telegram/{tenant_id}", methods=["POST"])
+    mcp = FastMCP("Requirements_Gathering_MCP")
+
+    # APIs
+    @mcp.custom_route("/api/v1/.well-known/mcp.json", methods=["GET"])
+    async def manifest(request: Request) -> JSONResponse:
+        return JSONResponse(
+            {
+                "name": settings.app_title,
+                "version": settings.app_version,
+            },
+            status_code=200,
+        )
+
+    @mcp.custom_route("/api/v1/health", methods=["GET"])
+    async def health_status(request: Request) -> JSONResponse:
+        headers = get_http_headers()
+        return JSONResponse({"status": "ok"}, status_code=200)
+
+    @mcp.custom_route("/api/v1/telegram/{tenant_id}", methods=["POST"])
     async def telegram_webhook(request: Request):
 
         tenant_id = request.path_params["tenant_id"]
@@ -32,13 +70,16 @@ def build_server(graph):
 
         return JSONResponse({"ok": True})
 
-    @mcp.custom_route("/tenants", methods=["POST"])
+    @mcp.custom_route("/api/v1/tenants", methods=["POST"])
     async def register_tenant(request: Request):
         payload = await request.json()
 
+        user = get_current_user()
+
         tenant = _save_tenant(
-            tenant_id=payload["tenant_id"],
-            name=payload["name"],
+            tenant_id=user.id,
+            name=user.username,
+            email=user.email,
             telegram_token=payload["telegram_token"],
             openrouter_api_key=payload["openrouter_api_key"],
         )
@@ -53,40 +94,54 @@ def build_server(graph):
             }
         )
 
+    # MCPs
     @mcp.tool
-    def get_user_stories(
-        tenant_id: str,
-        status: str | None = None,
-    ):
+    async def get_user_stories(status: str | None = None):
         """
         Get user stories for a tenant.
 
         Optionally filter by status, for example:
         draft, reviewed, rejected, added_to_board.
         """
+        user = get_current_user()
 
-        return _get_user_stories_from_db(
-            tenant_id=tenant_id,
+        return await _get_user_stories_from_db(
+            tenant_id=user.id,
             status=status,
         )
 
     @mcp.tool
-    def update_user_story_status(
-        tenant_id: str,
-        story_id: str,
-        status: str,
-    ):
+    async def update_user_story_status(story_id: str, status: str):
         """
         Update the review/workflow status of a user story.
 
         Typical statuses:
         draft, reviewed, added_to_board, rejected.
         """
+        user = get_current_user()
 
-        return _update_user_story_status(
-            tenant_id=tenant_id,
+        return await _update_user_story_status(
+            tenant_id=user.id,
             story_id=story_id,
             status=status,
         )
+
+    class UsageTrackingMiddleware(MCPMiddleware):
+        async def on_call_tool(self, context: MiddlewareContext, call_next):
+            try:
+                headers = get_http_headers()
+                await save_usage_report(
+                    method="TOOL_CALL",
+                    endpoint=context.message.name,
+                    auth_header=headers.get("authorization"),
+                )
+            except Exception:
+                logger.exception(
+                    "Usage tracking failed — continuing with tool call anyway"
+                )
+
+            return await call_next(context)
+
+    mcp.add_middleware(UsageTrackingMiddleware())
 
     return mcp
