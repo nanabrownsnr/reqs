@@ -30,6 +30,7 @@ services:
       OPENROUTER_URL: https://openrouter.ai/api/v1
       OPENROUTER_MODEL: openrouter/free
       PUBLIC_URL: https://reqs-58ca.onrender.com
+      
 
     restart: unless-stopped
 

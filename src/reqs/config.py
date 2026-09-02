@@ -48,11 +48,9 @@ class Settings(BaseSettings):
     openrouter_url: str
     openrouter_model: str
     public_url: str
-
     service_id: str = f"{mcp_name}_mcp"
     app_title: str = f"{mcp_name.title()} MCP"
     app_version: str = "1.0.0"
-    enviroment: str
     api_v1_str: str = "/api/v1"
     allowed_origins: str = "*"
     release_id: str = "1.0.0"
