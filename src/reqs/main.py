@@ -51,10 +51,8 @@ def main():
         ]
 
         app = mcp.http_app(middleware=middleware)
-        uvicorn.run(app, host="0.0.0.0", port=8000)
-
-        mcp.run(
-            transport="http",
+        uvicorn.run(
+            app,
             host="0.0.0.0",
             port=8000,
         )

@@ -15,6 +15,7 @@ dependencies = [
     "python-jose>=3.5.0",
     "python-telegram-bot>=22.8",
     "starlette>=1.6.0",
+    "uvicorn>=0.52.4",
 ]
 
 [project.scripts]
