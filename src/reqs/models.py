@@ -25,3 +25,16 @@ class TenantContext(BaseModel):
     name: str
     telegram_token: str | None = None
     openrouter_api_key: str | None = None
+
+
+class TenantRegistration(BaseModel):
+    telegram_token: str
+    openrouter_api_key: str
+
+
+class TenantContext(BaseModel):
+    tenant_id: str
+    email: str
+    name: str
+    telegram_token: str
+    openrouter_api_key: str

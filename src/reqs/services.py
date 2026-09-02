@@ -209,3 +209,22 @@ async def _save_tenant(
         )
 
         await conn.commit()
+
+
+async def _tenant_exists(tenant_id: str) -> bool:
+
+    async with await psycopg.AsyncConnection.connect(settings.database_url) as conn:
+
+        cursor = await conn.execute(
+            """
+            SELECT 1
+            FROM tenant_integrations
+            WHERE tenant_id = %s
+            LIMIT 1
+            """,
+            (tenant_id,),
+        )
+
+        row = await cursor.fetchone()
+
+    return row is not None

@@ -14,6 +14,7 @@ from starlette.responses import JSONResponse
 from reqs.telegram_service import handle_telegram_update, register_telegram_webhook
 from reqs.services import (
     _save_tenant,
+    _tenant_exists,
     _get_user_stories_from_db,
     _update_user_story_status,
 )
@@ -21,6 +22,7 @@ from reqs.config import settings
 from reqs.license import license_watcher
 from reqs.auth import get_auth_provider, get_current_user
 from reqs.usage import save_usage_report
+from reqs.models import TenantRegistration
 
 logger = getLogger(__name__)
 
@@ -46,11 +48,63 @@ def build_server(graph):
     async def manifest(request: Request) -> JSONResponse:
         return JSONResponse(
             {
-                "name": settings.app_title,
-                "version": settings.app_version,
-            },
-            status_code=200,
+                "name": "REQS",
+                "base_url": f"{settings.public_url}/mcp",
+                "version": "1.0.0",
+                "external_connections": {
+                    "oauth": None,
+                    "api_key": None,
+                    "project": {"name": "reqs_configuration"},
+                },
+            }
         )
+
+    @mcp.custom_route("/api/v1/schema", methods=["GET"])
+    async def configuration_schema(request: Request):
+
+        return JSONResponse(
+            {
+                "name": "reqs_configuration",
+                "endpoint": "/api/v1/configuration",
+                "method": "POST",
+                "schema": {
+                    "telegram_token": "string",
+                    "openrouter_api_key": "string",
+                },
+            }
+        )
+
+    @mcp.custom_route("/api/v1/configuration", methods=["POST"])
+    async def create_configuration(request: Request):
+
+        user = get_current_user()
+
+        payload = await request.json()
+
+        registration = TenantRegistration.model_validate(payload)
+
+        await _save_tenant(
+            tenant_id=user.id,
+            email=user.email,
+            name=user.username,
+            telegram_token=registration.telegram_token,
+            openrouter_api_key=registration.openrouter_api_key,
+        )
+
+        webhook = await register_telegram_webhook(tenant_id=user.id)
+
+        return JSONResponse(
+            {
+                "configured": True,
+                "telegram_webhook": webhook,
+            }
+        )
+
+    @mcp.custom_route("/api/v1/external-connection/me", methods=["GET"])
+    async def external_connection_me(request: Request):
+        user = get_current_user()
+        connected = await _tenant_exists(tenant_id=user.id)
+        return JSONResponse({"connected": connected})
 
     @mcp.custom_route("/api/v1/health", methods=["GET"])
     async def health_status(request: Request) -> JSONResponse:
