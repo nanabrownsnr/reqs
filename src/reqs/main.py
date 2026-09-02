@@ -22,7 +22,7 @@ def main():
 
         print("REQS is running......")
 
-        match settings.ENVIRONMENT:
+        match settings.environment:
             case "development":
                 origins = ["*"]
             case "staging":
