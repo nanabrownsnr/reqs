@@ -110,7 +110,7 @@ async def license_watcher(interval_seconds: float = 86400, max_failures: int = 1
     while True:
         try:
             valid = await validate_license(
-                settings.LICENSE_KEY, settings.SERVICE_ID, get_device_id()
+                settings.license_key, settings.service_id, get_device_id()
             )
             if valid:
                 failure_count = 0
