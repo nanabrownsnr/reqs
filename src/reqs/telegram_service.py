@@ -8,19 +8,23 @@ from reqs.config import settings
 async def register_telegram_webhook(
     tenant_id: str,
 ):
-
-    tenant = _get_tenant(tenant_id)
+    tenant = await _get_tenant(tenant_id)
 
     bot = Bot(token=tenant.telegram_token)
 
     webhook_url = f"{settings.public_url}" f"/api/v1/telegram/{tenant_id}"
 
-    await bot.set_webhook(url=webhook_url)
+    print("REGISTERING TELEGRAM WEBHOOK:", webhook_url)
 
-    return {
-        "tenant_id": tenant_id,
-        "webhook_url": webhook_url,
-    }
+    result = await bot.set_webhook(url=webhook_url)
+
+    print("TELEGRAM SET WEBHOOK RESULT:", result)
+
+    info = await bot.get_webhook_info()
+
+    print("TELEGRAM CURRENT WEBHOOK:", info.url)
+
+    return {"tenant_id": tenant_id, "webhook_url": info.url}
 
 
 async def handle_telegram_update(
@@ -30,7 +34,7 @@ async def handle_telegram_update(
 ):
 
     # Which tenant owns the bot?
-    tenant = _get_tenant(tenant_id)
+    tenant = await _get_tenant(tenant_id)
 
     # Use that tenant's Telegram bot.
     bot = Bot(token=tenant.telegram_token)
@@ -56,3 +60,20 @@ async def handle_telegram_update(
         chat_id=telegram_chat_id,
         text=response,
     )
+
+
+# from telegram import Bot
+# import asyncio
+
+
+# async def check_webhook():
+#     bot = Bot(token="8226888448:AAGk7jBgDIEGGjZWoK5W-n6H9_9-F0wMs6s")
+
+#     info = await bot.get_webhook_info()
+
+#     print("Current webhook:", info.url)
+#     print("Pending updates:", info.pending_update_count)
+#     print("Last error:", info.last_error_message)
+
+
+# asyncio.run(check_webhook())
