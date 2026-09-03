@@ -75,9 +75,9 @@ def build_server(graph):
         payload = await request.json()
         registration = TenantRegistration.model_validate(payload)
         await _save_tenant(
-            tenant_id=user.id,
-            email=user.email,
-            name=user.username,
+            tenant_id=user["id"],
+            email=user["email"],
+            name=user["username"],
             telegram_token=registration.telegram_token,
             openrouter_api_key=registration.openrouter_api_key,
         )
@@ -92,7 +92,7 @@ def build_server(graph):
     @mcp.custom_route("/api/v1/external-connection/me", methods=["GET"])
     async def external_connection_me(request: Request):
         user = get_current_user()
-        connected = await _tenant_exists(tenant_id=user.id)
+        connected = await _tenant_exists(tenant_id=user["id"])
         return JSONResponse({"connected": connected})
 
     @mcp.custom_route("/api/v1/health", methods=["GET"])
@@ -111,25 +111,25 @@ def build_server(graph):
         )
         return JSONResponse({"ok": True})
 
-    @mcp.custom_route("/api/v1/tenants", methods=["POST"])
-    async def register_tenant(request: Request):
-        payload = await request.json()
-        user = get_current_user()
-        tenant = _save_tenant(
-            tenant_id=user.id,
-            name=user.username,
-            email=user.email,
-            telegram_token=payload["telegram_token"],
-            openrouter_api_key=payload["openrouter_api_key"],
-        )
-        webhook_result = await register_telegram_webhook(tenant.tenant_id)
-        return JSONResponse(
-            {
-                "tenant_id": tenant.tenant_id,
-                "registered": True,
-                "telegram_webhook": webhook_result,
-            }
-        )
+    # @mcp.custom_route("/api/v1/tenants", methods=["POST"])
+    # async def register_tenant(request: Request):
+    #     payload = await request.json()
+    #     user = get_current_user()
+    #     tenant = _save_tenant(
+    #         tenant_id=user.id,
+    #         name=user.username,
+    #         email=user.email,
+    #         telegram_token=payload["telegram_token"],
+    #         openrouter_api_key=payload["openrouter_api_key"],
+    #     )
+    #     webhook_result = await register_telegram_webhook(tenant.tenant_id)
+    #     return JSONResponse(
+    #         {
+    #             "tenant_id": tenant.tenant_id,
+    #             "registered": True,
+    #             "telegram_webhook": webhook_result,
+    #         }
+    #     )
 
     # MCPs
     @mcp.tool
