@@ -1,7 +1,9 @@
+import asyncio
+import os
+
 import uvicorn
 
-from langgraph.checkpoint.postgres import PostgresSaver
-
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 
@@ -10,11 +12,13 @@ from reqs.graph import build_graph
 from reqs.server import build_server
 
 
-def main():
+async def main():
 
-    with PostgresSaver.from_conn_string(settings.database_url) as checkpointer:
+    async with AsyncPostgresSaver.from_conn_string(
+        settings.database_url
+    ) as checkpointer:
 
-        checkpointer.setup()
+        await checkpointer.setup()
 
         graph = build_graph(checkpointer)
 
@@ -23,15 +27,22 @@ def main():
         print("REQS is running......")
 
         match settings.environment:
+
             case "development":
                 origins = ["*"]
+
             case "staging":
                 origins = [
                     "https://staging.twynity.ai",
                     "https://twynity-staging.mis.4th-ir.com",
                 ]
+
             case "production":
-                origins = ["https://twynity.ai", "https://twynity.mis.4th-ir.com"]
+                origins = [
+                    "https://twynity.ai",
+                    "https://twynity.mis.4th-ir.com",
+                ]
+
             case _:
                 origins = ["*"]
 
@@ -46,12 +57,17 @@ def main():
         ]
 
         app = mcp.http_app(middleware=middleware)
-        uvicorn.run(
-            app,
+
+        config = uvicorn.Config(
+            app=app,
             host="0.0.0.0",
             port=8000,
         )
 
+        server = uvicorn.Server(config)
+
+        await server.serve()
+
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
