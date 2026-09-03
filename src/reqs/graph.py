@@ -14,16 +14,16 @@ from reqs.services import _get_tenant
 tools = [save_user_stories, get_existing_user_stories]
 
 
-def llm_node(state: AgentState, config: RunnableConfig):
+async def llm_node(state: AgentState, config: RunnableConfig):
     print("\n--- Processing Node ---")
 
     tenant_id = config["configurable"]["tenant_id"]
-    tenant = _get_tenant(tenant_id)
+    tenant = await _get_tenant(tenant_id)
 
     llm = get_llm(tenant.openrouter_api_key).bind_tools(tools)
 
     messages = [SystemMessage(content=_get_system_prompt()), *state["messages"]]
-    resp = llm.ainvoke(messages)
+    resp = await llm.ainvoke(messages)
 
     return {"messages": [resp]}
 
