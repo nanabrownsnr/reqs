@@ -89,13 +89,6 @@ def build_server(graph):
             }
         )
 
-    @mcp.custom_route("/api/v1/external-connection/me", methods=["OPTIONS"])
-    async def external_connection_me(request: Request):
-
-        return JSONResponse(
-            status_code=204,
-        )
-
     @mcp.custom_route("/api/v1/external-connection/me", methods=["GET"])
     async def external_connection_me(request: Request):
         user = get_current_user()
