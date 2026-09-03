@@ -133,7 +133,7 @@ def build_server(graph):
 
     # MCPs
     @mcp.tool
-    async def get_user_stories(status: str | None = None):
+    async def get_user_stories(status: str | None = "draft"):
         """
         Get user stories for a tenant.
 
@@ -142,7 +142,7 @@ def build_server(graph):
         """
         user = get_current_user()
         return await _get_user_stories_from_db(
-            tenant_id=user.id,
+            tenant_id=user["id"],
             status=status,
         )
 
@@ -156,7 +156,7 @@ def build_server(graph):
         """
         user = get_current_user()
         return await _update_user_story_status(
-            tenant_id=user.id,
+            tenant_id=user["id"],
             story_id=story_id,
             status=status,
         )

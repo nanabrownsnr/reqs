@@ -1,7 +1,4 @@
 from uuid import uuid4
-import json
-from pathlib import Path
-
 import psycopg
 from psycopg.types.json import Jsonb
 
