@@ -89,7 +89,7 @@ def build_server(graph):
             }
         )
 
-    @mcp.custom_route("/api/v1/external-connection/me", methods=["GET"])
+    @mcp.custom_route("/api/v1/external-connection/me")
     async def external_connection_me(request: Request):
         user = get_current_user()
         connected = await _tenant_exists(tenant_id=user.id)
